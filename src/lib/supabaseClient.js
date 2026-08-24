@@ -8,3 +8,9 @@ export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null
+
+export function getSupabaseImageUrl(assetUrl, version) {
+  if (!assetUrl || version === undefined || version === null) return assetUrl
+  const separator = assetUrl.includes('?') ? '&' : '?'
+  return `${assetUrl}${separator}v=${encodeURIComponent(version)}`
+}

@@ -4,7 +4,7 @@ import './App.css'
 import Sidebar, { Icon } from './components/Sidebar'
 import SocialUrlsPage from './components/SocialUrls'
 import AppointmentsPage from './components/Appointments'
-import { isSupabaseConfigured, supabase } from './lib/supabaseClient'
+import { getSupabaseImageUrl, isSupabaseConfigured, supabase } from './lib/supabaseClient'
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -88,14 +88,14 @@ function ClinicInformation() {
     setSaving(true)
     let profileImageUrl = form.profile_image_url
     if (imageFile) {
-      const filePath = `${editingId ?? crypto.randomUUID()}-${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`
+      const filePath = `${editingId ?? crypto.randomUUID()}-${crypto.randomUUID()}-${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`
       const { error: uploadError } = await supabase.storage.from('clinic-images').upload(filePath, imageFile, { upsert: true })
       if (uploadError) {
         setError(uploadError.message)
         setSaving(false)
         return
       }
-      profileImageUrl = supabase.storage.from('clinic-images').getPublicUrl(filePath).data.publicUrl
+      profileImageUrl = getSupabaseImageUrl(supabase.storage.from('clinic-images').getPublicUrl(filePath).data.publicUrl, Date.now())
     }
     const record = editingId ? { id: editingId, ...form, profile_image_url: profileImageUrl } : { ...form, profile_image_url: profileImageUrl }
     const { data, error: saveError } = await supabase.from('clinic_information').upsert(record).select().single()
@@ -188,7 +188,7 @@ function MissionVisionCore() {
         setSaving(false)
         return
       }
-      imageUrl = supabase.storage.from('mission-images').getPublicUrl(filePath).data.publicUrl
+      imageUrl = getSupabaseImageUrl(supabase.storage.from('mission-images').getPublicUrl(filePath).data.publicUrl, Date.now())
     }
     const payload = editingId ? { id: editingId, ...form, image_url: imageUrl } : { ...form, image_url: imageUrl }
     const { data, error: saveError } = await supabase.from('mission_vision_core').upsert(payload).select().single()
@@ -277,7 +277,7 @@ function Awards() {
           setSaving(false)
           return
         }
-        uploadedUrls.push(supabase.storage.from('award-images').getPublicUrl(filePath).data.publicUrl)
+        uploadedUrls.push(getSupabaseImageUrl(supabase.storage.from('award-images').getPublicUrl(filePath).data.publicUrl, Date.now()))
       }
       imageUrls = editingId ? [...imageUrls, ...uploadedUrls] : uploadedUrls
     }
@@ -368,7 +368,7 @@ function Services() {
           setSaving(false)
           return
         }
-        uploadedUrls.push(supabase.storage.from('service-images').getPublicUrl(filePath).data.publicUrl)
+        uploadedUrls.push(getSupabaseImageUrl(supabase.storage.from('service-images').getPublicUrl(filePath).data.publicUrl, Date.now()))
       }
       imageUrls = editingId ? [...imageUrls, ...uploadedUrls] : uploadedUrls
     }
@@ -457,7 +457,7 @@ function Doctors() {
         setSaving(false)
         return
       }
-      imageUrl = supabase.storage.from('doctor-images').getPublicUrl(filePath).data.publicUrl
+      imageUrl = getSupabaseImageUrl(supabase.storage.from('doctor-images').getPublicUrl(filePath).data.publicUrl, Date.now())
     }
     const payload = editingId ? { id: editingId, ...form, image_url: imageUrl } : { ...form, image_url: imageUrl }
     const { data, error: saveError } = await supabase.from('doctors').upsert(payload).select().single()
@@ -544,7 +544,7 @@ function ManagementTeam() {
         setSaving(false)
         return
       }
-      imageUrl = supabase.storage.from('team-images').getPublicUrl(filePath).data.publicUrl
+      imageUrl = getSupabaseImageUrl(supabase.storage.from('team-images').getPublicUrl(filePath).data.publicUrl, Date.now())
     }
     const payload = editingId ? { id: editingId, ...form, image_url: imageUrl } : { ...form, image_url: imageUrl }
     const { data, error: saveError } = await supabase.from('management_team').upsert(payload).select().single()
@@ -631,7 +631,7 @@ function ContentManager({ config }) {
       const filePath = `${editingId ?? crypto.randomUUID()}-${crypto.randomUUID()}-${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`
       const { error: uploadError } = await supabase.storage.from(config.bucket).upload(filePath, imageFile)
       if (uploadError) { setError(uploadError.message); setSaving(false); return }
-      imageUrl = supabase.storage.from(config.bucket).getPublicUrl(filePath).data.publicUrl
+      imageUrl = getSupabaseImageUrl(supabase.storage.from(config.bucket).getPublicUrl(filePath).data.publicUrl, Date.now())
     }
     const payload = { ...form, image_url: imageUrl }
     if (editingId) payload.id = editingId
@@ -785,7 +785,7 @@ function LegacySocialUrls() {
       const filePath = `${editingId ?? crypto.randomUUID()}-${crypto.randomUUID()}-${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`
       const { error: uploadError } = await supabase.storage.from('corporate-images').upload(filePath, imageFile)
       if (uploadError) { setError(uploadError.message); setSaving(false); return }
-      imageUrl = supabase.storage.from('corporate-images').getPublicUrl(filePath).data.publicUrl
+      imageUrl = getSupabaseImageUrl(supabase.storage.from('corporate-images').getPublicUrl(filePath).data.publicUrl, Date.now())
     }
     const payload = editingId ? { id: editingId, title: form.title, description: form.description, image_url: imageUrl } : { title: form.title, description: form.description, image_url: imageUrl }
     const { data, error: saveError } = await supabase.from('corporate').upsert(payload).select().single()
@@ -833,7 +833,7 @@ function LegacySocialUrls() {
       const filePath = `${editingId ?? crypto.randomUUID()}-${crypto.randomUUID()}-${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`
       const { error: uploadError } = await supabase.storage.from('blog-images').upload(filePath, imageFile)
       if (uploadError) { setError(uploadError.message); setSaving(false); return }
-      imageUrl = supabase.storage.from('blog-images').getPublicUrl(filePath).data.publicUrl
+      imageUrl = getSupabaseImageUrl(supabase.storage.from('blog-images').getPublicUrl(filePath).data.publicUrl, Date.now())
     }
     const payload = { ...form, image_url: imageUrl }
     if (editingId) payload.id = editingId
