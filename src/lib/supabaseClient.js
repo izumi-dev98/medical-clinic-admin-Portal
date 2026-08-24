@@ -12,14 +12,30 @@ export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null
 
+async function prepareCloudinaryFile(file) {
+  const image = await createImageBitmap(file)
+  const maxDimension = 1600
+  const scale = Math.min(1, maxDimension / Math.max(image.width, image.height))
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(image.width * scale))
+  canvas.height = Math.max(1, Math.round(image.height * scale))
+  canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height)
+  image.close()
+
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', 0.82))
+  if (!blob) throw new Error('Could not prepare image for upload.')
+  return new File([blob], `${file.name.replace(/\.[^/.]+$/, '')}.webp`, { type: 'image/webp' })
+}
+
 export async function uploadCloudinaryImage(file, folder) {
   try {
+    const uploadFile = await prepareCloudinaryFile(file)
     const formData = new FormData()
-    formData.append('file', file)
+    formData.append('file', uploadFile)
     formData.append('folder', folder)
     const response = await fetch('/api/cloudinary-upload', { method: 'POST', body: formData })
     const result = await response.json()
-    if (!response.ok) return { error: result.error || 'Cloudinary upload failed.' }
+    if (!response.ok) return { error: response.status === 413 ? 'Image is too large. Please choose a smaller image.' : result.error || 'Cloudinary upload failed.' }
     return { data: { publicUrl: result.secureUrl }, error: null }
   } catch (error) {
     return { error: error instanceof Error ? error.message : 'Cloudinary upload failed.' }
