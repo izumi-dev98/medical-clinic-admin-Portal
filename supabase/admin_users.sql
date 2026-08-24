@@ -12,6 +12,6 @@ create table if not exists public.admin_users (
 alter table public.admin_users enable row level security;
 revoke all on public.admin_users from anon, authenticated;
 
--- Create the first user through the server-side admin API after setting SUPABASE_SERVICE_ROLE_KEY.
--- Example hash generation: node -e "console.log(require('bcryptjs').hashSync('ChangeMe123!', 12))"
--- insert into public.admin_users (full_name, username, password_hash) values ('Administrator', 'admin', '<bcrypt-hash>');
+insert into public.admin_users (full_name, username, password_hash, active)
+values ('Administrator', 'admin', '$2b$12$sKGj6NpTjovkM8cpK56nk.TYu1uSLFvbanug7icRcp.zQw0QzNv3C', true)
+on conflict (username) do nothing;
