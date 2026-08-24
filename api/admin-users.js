@@ -14,6 +14,7 @@ export default async function handler(request, response) {
 
   const [fields] = await formidable({ multiples: false }).parse(request)
   const values = Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, Array.isArray(value) ? value[0] : value]))
+  if (values.username) values.username = String(values.username).trim().toLowerCase()
   if (!values.full_name || !values.username) return response.status(400).json({ error: 'Full name and username are required.' })
 
   if (request.method === 'POST') {
