@@ -14,3 +14,17 @@ export function getSupabaseImageUrl(assetUrl, version) {
   const separator = assetUrl.includes('?') ? '&' : '?'
   return `${assetUrl}${separator}v=${encodeURIComponent(version)}`
 }
+
+export async function removeSupabaseImage(bucket, assetUrl) {
+  if (!assetUrl || !supabase) return
+  try {
+    const pathname = new URL(assetUrl).pathname
+    const marker = `/storage/v1/object/public/${bucket}/`
+    const markerIndex = pathname.indexOf(marker)
+    if (markerIndex === -1) return
+    const path = decodeURIComponent(pathname.slice(markerIndex + marker.length))
+    if (path) await supabase.storage.from(bucket).remove([path])
+  } catch {
+    // Ignore cleanup failures after the database update succeeds.
+  }
+}

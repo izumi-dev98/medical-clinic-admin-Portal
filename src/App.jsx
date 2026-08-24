@@ -4,7 +4,7 @@ import './App.css'
 import Sidebar, { Icon } from './components/Sidebar'
 import SocialUrlsPage from './components/SocialUrls'
 import AppointmentsPage from './components/Appointments'
-import { getSupabaseImageUrl, isSupabaseConfigured, supabase } from './lib/supabaseClient'
+import { getSupabaseImageUrl, isSupabaseConfigured, removeSupabaseImage, supabase } from './lib/supabaseClient'
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -86,6 +86,7 @@ function ClinicInformation() {
       return
     }
     setSaving(true)
+    const previousImageUrl = form.profile_image_url
     let profileImageUrl = form.profile_image_url
     if (imageFile) {
       const filePath = `${editingId ?? crypto.randomUUID()}-${crypto.randomUUID()}-${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`
@@ -101,6 +102,7 @@ function ClinicInformation() {
     const { data, error: saveError } = await supabase.from('clinic_information').upsert(record).select().single()
     if (saveError) setError(saveError.message)
     else {
+      if (imageFile && previousImageUrl && previousImageUrl !== profileImageUrl) await removeSupabaseImage('clinic-images', previousImageUrl)
       setRecords((current) => editingId ? current.map((item) => item.id === editingId ? data : item) : [data, ...current])
       setIsModalOpen(false)
       await Swal.fire({ icon: 'success', title: editingId ? 'Information updated' : 'Information added', text: 'Clinic information was saved successfully.', timer: 1600, showConfirmButton: false })
@@ -179,6 +181,7 @@ function MissionVisionCore() {
       return
     }
     setSaving(true)
+    const previousImageUrl = form.image_url
     let imageUrl = form.image_url
     if (imageFile) {
       const filePath = `${editingId ?? crypto.randomUUID()}-${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`
@@ -194,6 +197,7 @@ function MissionVisionCore() {
     const { data, error: saveError } = await supabase.from('mission_vision_core').upsert(payload).select().single()
     if (saveError) setError(saveError.message)
     else {
+      if (imageFile && previousImageUrl && previousImageUrl !== imageUrl) await removeSupabaseImage('mission-images', previousImageUrl)
       setRecords((current) => editingId ? current.map((item) => item.id === editingId ? data : item) : [...current, data].sort((a, b) => a.display_order - b.display_order))
       setIsModalOpen(false)
       await Swal.fire({ icon: 'success', title: editingId ? 'Content updated' : 'Content added', timer: 1400, showConfirmButton: false })
@@ -266,6 +270,7 @@ function Awards() {
       return
     }
     setSaving(true)
+    const previousImageUrls = form.image_urls
     let imageUrls = form.image_urls
     if (imageFiles.length) {
       const uploadedUrls = []
@@ -279,12 +284,13 @@ function Awards() {
         }
         uploadedUrls.push(getSupabaseImageUrl(supabase.storage.from('award-images').getPublicUrl(filePath).data.publicUrl, Date.now()))
       }
-      imageUrls = editingId ? [...imageUrls, ...uploadedUrls] : uploadedUrls
+      imageUrls = uploadedUrls
     }
     const payload = editingId ? { id: editingId, title: form.title, description: form.description, image_urls: imageUrls } : { title: form.title, description: form.description, image_urls: imageUrls }
     const { data, error: saveError } = await supabase.from('awards').upsert(payload).select().single()
     if (saveError) setError(saveError.message)
     else {
+      if (imageFiles.length && editingId) await Promise.all(previousImageUrls.map((imageUrl) => removeSupabaseImage('award-images', imageUrl)))
       setRecords((current) => editingId ? current.map((item) => item.id === editingId ? data : item) : [data, ...current])
       setIsModalOpen(false)
       await Swal.fire({ icon: 'success', title: editingId ? 'Award updated' : 'Award added', timer: 1400, showConfirmButton: false })
@@ -357,6 +363,7 @@ function Services() {
       return
     }
     setSaving(true)
+    const previousImageUrls = form.image_urls
     let imageUrls = form.image_urls
     if (imageFiles.length) {
       const uploadedUrls = []
@@ -370,12 +377,13 @@ function Services() {
         }
         uploadedUrls.push(getSupabaseImageUrl(supabase.storage.from('service-images').getPublicUrl(filePath).data.publicUrl, Date.now()))
       }
-      imageUrls = editingId ? [...imageUrls, ...uploadedUrls] : uploadedUrls
+      imageUrls = uploadedUrls
     }
     const payload = editingId ? { id: editingId, title: form.title, description: form.description, image_urls: imageUrls } : { title: form.title, description: form.description, image_urls: imageUrls }
     const { data, error: saveError } = await supabase.from('services').upsert(payload).select().single()
     if (saveError) setError(saveError.message)
     else {
+      if (imageFiles.length && editingId) await Promise.all(previousImageUrls.map((imageUrl) => removeSupabaseImage('service-images', imageUrl)))
       setRecords((current) => editingId ? current.map((item) => item.id === editingId ? data : item) : [data, ...current])
       setIsModalOpen(false)
       await Swal.fire({ icon: 'success', title: editingId ? 'Service updated' : 'Service added', timer: 1400, showConfirmButton: false })
@@ -448,6 +456,7 @@ function Doctors() {
       return
     }
     setSaving(true)
+    const previousImageUrl = form.image_url
     let imageUrl = form.image_url
     if (imageFile) {
       const filePath = `${editingId ?? crypto.randomUUID()}-${crypto.randomUUID()}-${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`
@@ -463,6 +472,7 @@ function Doctors() {
     const { data, error: saveError } = await supabase.from('doctors').upsert(payload).select().single()
     if (saveError) setError(saveError.message)
     else {
+      if (imageFile && previousImageUrl && previousImageUrl !== imageUrl) await removeSupabaseImage('doctor-images', previousImageUrl)
       setRecords((current) => editingId ? current.map((item) => item.id === editingId ? data : item) : [data, ...current])
       setIsModalOpen(false)
       await Swal.fire({ icon: 'success', title: editingId ? 'Doctor updated' : 'Doctor added', timer: 1400, showConfirmButton: false })
@@ -535,6 +545,7 @@ function ManagementTeam() {
       return
     }
     setSaving(true)
+    const previousImageUrl = form.image_url
     let imageUrl = form.image_url
     if (imageFile) {
       const filePath = `${editingId ?? crypto.randomUUID()}-${crypto.randomUUID()}-${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`
@@ -550,6 +561,7 @@ function ManagementTeam() {
     const { data, error: saveError } = await supabase.from('management_team').upsert(payload).select().single()
     if (saveError) setError(saveError.message)
     else {
+      if (imageFile && previousImageUrl && previousImageUrl !== imageUrl) await removeSupabaseImage('team-images', previousImageUrl)
       setRecords((current) => editingId ? current.map((item) => item.id === editingId ? data : item) : [data, ...current])
       setIsModalOpen(false)
       await Swal.fire({ icon: 'success', title: editingId ? 'Team member updated' : 'Team member added', timer: 1400, showConfirmButton: false })
@@ -626,6 +638,7 @@ function ContentManager({ config }) {
     setError('')
     if (!isSupabaseConfigured) { setError('Supabase is not configured. Add your environment variables first.'); return }
     setSaving(true)
+    const previousImageUrl = form.image_url
     let imageUrl = form.image_url
     if (imageFile) {
       const filePath = `${editingId ?? crypto.randomUUID()}-${crypto.randomUUID()}-${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`
@@ -639,7 +652,7 @@ function ContentManager({ config }) {
     if (config.table === 'promotions') payload.discount_value = Number(form.discount_value)
     const { data, error: saveError } = await supabase.from(config.table).upsert(payload).select().single()
     if (saveError) setError(saveError.message)
-    else { setRecords((current) => editingId ? current.map((item) => item.id === editingId ? data : item) : [data, ...current]); setIsModalOpen(false); await Swal.fire({ icon: 'success', title: `${config.singular[0].toUpperCase()}${config.singular.slice(1)} ${editingId ? 'updated' : 'added'}`, timer: 1400, showConfirmButton: false }) }
+    else { if (imageFile && previousImageUrl && previousImageUrl !== imageUrl) await removeSupabaseImage(config.bucket, previousImageUrl); setRecords((current) => editingId ? current.map((item) => item.id === editingId ? data : item) : [data, ...current]); setIsModalOpen(false); await Swal.fire({ icon: 'success', title: `${config.singular[0].toUpperCase()}${config.singular.slice(1)} ${editingId ? 'updated' : 'added'}`, timer: 1400, showConfirmButton: false }) }
     setSaving(false)
   }
 
@@ -780,6 +793,7 @@ function LegacySocialUrls() {
     setError('')
     if (!isSupabaseConfigured) { setError('Supabase is not configured. Add your environment variables first.'); return }
     setSaving(true)
+    const previousImageUrl = form.image_url
     let imageUrl = form.image_url
     if (imageFile) {
       const filePath = `${editingId ?? crypto.randomUUID()}-${crypto.randomUUID()}-${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`
@@ -790,7 +804,7 @@ function LegacySocialUrls() {
     const payload = editingId ? { id: editingId, title: form.title, description: form.description, image_url: imageUrl } : { title: form.title, description: form.description, image_url: imageUrl }
     const { data, error: saveError } = await supabase.from('corporate').upsert(payload).select().single()
     if (saveError) setError(saveError.message)
-    else { setRecords((current) => editingId ? current.map((item) => item.id === editingId ? data : item) : [data, ...current]); setIsModalOpen(false); await Swal.fire({ icon: 'success', title: editingId ? 'Corporate information updated' : 'Corporate information added', timer: 1400, showConfirmButton: false }) }
+    else { if (imageFile && previousImageUrl && previousImageUrl !== imageUrl) await removeSupabaseImage('corporate-images', previousImageUrl); setRecords((current) => editingId ? current.map((item) => item.id === editingId ? data : item) : [data, ...current]); setIsModalOpen(false); await Swal.fire({ icon: 'success', title: editingId ? 'Corporate information updated' : 'Corporate information added', timer: 1400, showConfirmButton: false }) }
     setSaving(false)
   }
 
@@ -828,6 +842,7 @@ function LegacySocialUrls() {
     setError('')
     if (!isSupabaseConfigured) { setError('Supabase is not configured. Add your environment variables first.'); return }
     setSaving(true)
+    const previousImageUrl = form.image_url
     let imageUrl = form.image_url
     if (imageFile) {
       const filePath = `${editingId ?? crypto.randomUUID()}-${crypto.randomUUID()}-${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`
@@ -839,7 +854,7 @@ function LegacySocialUrls() {
     if (editingId) payload.id = editingId
     const { data, error: saveError } = await supabase.from('blog_posts').upsert(payload).select().single()
     if (saveError) setError(saveError.message)
-    else { setRecords((current) => editingId ? current.map((item) => item.id === editingId ? data : item) : [data, ...current]); setIsModalOpen(false); await Swal.fire({ icon: 'success', title: editingId ? 'Post updated' : 'Post added', timer: 1400, showConfirmButton: false }) }
+    else { if (imageFile && previousImageUrl && previousImageUrl !== imageUrl) await removeSupabaseImage('blog-images', previousImageUrl); setRecords((current) => editingId ? current.map((item) => item.id === editingId ? data : item) : [data, ...current]); setIsModalOpen(false); await Swal.fire({ icon: 'success', title: editingId ? 'Post updated' : 'Post added', timer: 1400, showConfirmButton: false }) }
     setSaving(false)
   }
 
