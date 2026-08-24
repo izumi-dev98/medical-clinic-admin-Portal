@@ -14,4 +14,7 @@ revoke all on public.admin_users from anon, authenticated;
 
 insert into public.admin_users (full_name, username, password_hash, active)
 values ('Administrator', 'admin', '$2b$12$sKGj6NpTjovkM8cpK56nk.TYu1uSLFvbanug7icRcp.zQw0QzNv3C', true)
-on conflict (username) do nothing;
+on conflict (username) do update
+set full_name = excluded.full_name,
+    password_hash = excluded.password_hash,
+    active = excluded.active;
