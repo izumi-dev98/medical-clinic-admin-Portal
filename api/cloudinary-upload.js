@@ -1,3 +1,6 @@
+import { readFile } from 'node:fs/promises'
+import formidable from 'formidable'
+
 export default async function handler(request, response) {
   if (request.method !== 'POST') {
     response.setHeader('Allow', 'POST')
@@ -5,21 +8,22 @@ export default async function handler(request, response) {
   }
 
   try {
-    const formData = await request.formData()
-    const file = formData.get('file')
-    const folder = String(formData.get('folder') || 'clinic-images').replace(/[^a-zA-Z0-9/_-]/g, '')
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME
     const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET
 
     if (!cloudName || !uploadPreset) {
-      return response.status(500).json({ error: 'Cloudinary environment variables are not configured.' })
+      return response.status(500).json({ error: 'Cloudinary environment variables are missing in Vercel.' })
     }
-    if (!file || typeof file.arrayBuffer !== 'function') {
+    const [fields, files] = await formidable({ multiples: false }).parse(request)
+    const file = Array.isArray(files.file) ? files.file[0] : files.file
+    if (!file) {
       return response.status(400).json({ error: 'An image file is required.' })
     }
+    const folderValue = Array.isArray(fields.folder) ? fields.folder[0] : fields.folder
+    const folder = String(folderValue || 'clinic-images').replace(/[^a-zA-Z0-9/_-]/g, '')
 
     const uploadData = new FormData()
-    uploadData.append('file', new Blob([await file.arrayBuffer()], { type: file.type }), file.name)
+    uploadData.append('file', new Blob([await readFile(file.filepath)], { type: file.mimetype || 'application/octet-stream' }), file.originalFilename || 'image')
     uploadData.append('upload_preset', uploadPreset)
     uploadData.append('folder', folder)
 
