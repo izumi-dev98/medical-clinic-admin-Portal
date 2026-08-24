@@ -9,6 +9,20 @@ export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null
 
+export async function uploadCloudinaryImage(file, folder) {
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('folder', folder)
+    const response = await fetch('/api/cloudinary-upload', { method: 'POST', body: formData })
+    const result = await response.json()
+    if (!response.ok) return { error: result.error || 'Cloudinary upload failed.' }
+    return { data: { publicUrl: result.secureUrl }, error: null }
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'Cloudinary upload failed.' }
+  }
+}
+
 export function getSupabaseImageUrl(assetUrl, version) {
   if (!assetUrl || version === undefined || version === null) return assetUrl
   const separator = assetUrl.includes('?') ? '&' : '?'
@@ -18,6 +32,14 @@ export function getSupabaseImageUrl(assetUrl, version) {
 export async function removeSupabaseImage(bucket, assetUrl) {
   if (!assetUrl || !supabase) return
   try {
+    if (assetUrl.includes('res.cloudinary.com')) {
+      await fetch('/api/cloudinary-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: assetUrl }),
+      })
+      return
+    }
     const pathname = new URL(assetUrl).pathname
     const marker = `/storage/v1/object/public/${bucket}/`
     const markerIndex = pathname.indexOf(marker)
