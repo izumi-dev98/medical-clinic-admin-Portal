@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import Swal from 'sweetalert2'
 import './App.css'
 import Sidebar, { Icon } from './components/Sidebar'
+import SocialUrlsPage from './components/SocialUrls'
+import AppointmentsPage from './components/Appointments'
 import { isSupabaseConfigured, supabase } from './lib/supabaseClient'
 
 function App() {
@@ -20,7 +22,7 @@ function App() {
         </header>
 
         <div className="page-content">
-          {activePage === 'Hospital/Clinic Information' ? <ClinicInformation /> : activePage === 'Mission, Vision & Core' ? <MissionVisionCore /> : activePage === 'Awards' ? <Awards /> : activePage === 'Services' ? <Services /> : activePage === 'Doctors' ? <Doctors /> : activePage === 'Management Team' ? <ManagementTeam /> : activePage === 'Medical Packages' ? <MedicalPackages /> : activePage === 'Promotions' ? <Promotions /> : activePage === 'Blog' ? <Blog /> : activePage === 'Corporate' ? <ContentManager config={contentPageConfig.corporate} /> : <ClinicInformation />}
+          {activePage === 'Hospital/Clinic Information' ? <ClinicInformation /> : activePage === 'Mission, Vision & Core' ? <MissionVisionCore /> : activePage === 'Awards' ? <Awards /> : activePage === 'Services' ? <Services /> : activePage === 'Doctors' ? <Doctors /> : activePage === 'Management Team' ? <ManagementTeam /> : activePage === 'Medical Packages' ? <MedicalPackages /> : activePage === 'Promotions' ? <Promotions /> : activePage === 'Blog' ? <Blog /> : activePage === 'Corporate' ? <ContentManager config={contentPageConfig.corporate} /> : activePage === 'Social URLs' ? <SocialUrlsPage /> : activePage === 'Appointments' ? <AppointmentsPage /> : <ClinicInformation />}
         </div>
       </main>
     </div>
@@ -680,6 +682,81 @@ function Corporate() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
+
+  void LegacySocialUrls
+
+function LegacySocialUrls() {
+  const emptyForm = { title: '', url: '' }
+  const [records, setRecords] = useState([])
+  const [form, setForm] = useState(emptyForm)
+  const [editingId, setEditingId] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [loading, setLoading] = useState(isSupabaseConfigured)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return
+    async function loadSocialUrls() {
+      const { data, error: fetchError } = await supabase.from('social_urls').select('*').order('created_at', { ascending: false })
+      if (fetchError) setError(fetchError.message)
+      else setRecords(data ?? [])
+      setLoading(false)
+    }
+    loadSocialUrls()
+  }, [])
+
+  function updateField(event) {
+    setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
+    setError('')
+  }
+
+  function openAddModal() {
+    setForm(emptyForm)
+    setEditingId(null)
+    setError('')
+    setIsModalOpen(true)
+  }
+
+  function openEditModal(record) {
+    setForm({ title: record.title ?? '', url: record.url ?? '' })
+    setEditingId(record.id)
+    setError('')
+    setIsModalOpen(true)
+  }
+
+  async function saveSocialUrl(event) {
+    event.preventDefault()
+    setError('')
+    if (!isSupabaseConfigured) {
+      setError('Supabase is not configured. Add your environment variables first.')
+      return
+    }
+    setSaving(true)
+    const payload = editingId ? { id: editingId, ...form } : form
+    const { data, error: saveError } = await supabase.from('social_urls').upsert(payload).select().single()
+    if (saveError) setError(saveError.message)
+    else {
+      setRecords((current) => editingId ? current.map((item) => item.id === editingId ? data : item) : [data, ...current])
+      setIsModalOpen(false)
+      await Swal.fire({ icon: 'success', title: editingId ? 'Social URL updated' : 'Social URL added', timer: 1400, showConfirmButton: false })
+    }
+    setSaving(false)
+  }
+
+  async function deleteSocialUrl(id) {
+    const result = await Swal.fire({ icon: 'warning', title: 'Delete this social URL?', text: 'This social URL will be permanently removed.', showCancelButton: true, confirmButtonText: 'Delete', cancelButtonText: 'Cancel', confirmButtonColor: '#d46d59' })
+    if (!result.isConfirmed) return
+    const { error: deleteError } = await supabase.from('social_urls').delete().eq('id', id)
+    if (deleteError) setError(deleteError.message)
+    else {
+      setRecords((current) => current.filter((item) => item.id !== id))
+      await Swal.fire({ icon: 'success', title: 'Deleted', timer: 1200, showConfirmButton: false })
+    }
+  }
+
+  return <section className="information-page"><div className="information-heading"><div><p className="eyebrow">Online presence</p><h1>Social URLs</h1><p className="muted">Manage social media links shown to your visitors.</p></div><button className="primary-button" type="button" onClick={openAddModal} disabled={loading}><span>+</span> Add social URL</button></div>{!isSupabaseConfigured && <p className="setup-message">Add your Supabase keys to `.env.local` to enable cloud saving.</p>}{error && <p className="error-message" role="alert">{error}</p>}<div className="information-table-wrap"><table className="information-table"><thead><tr><th>Title</th><th>URL</th><th>Actions</th></tr></thead><tbody>{loading ? <tr><td colSpan="3" className="empty-state">Loading social URLs...</td></tr> : records.length === 0 ? <tr><td colSpan="3" className="empty-state">No social URLs added yet.</td></tr> : records.map((record) => <tr key={record.id}><td><strong>{record.title}</strong></td><td><a href={record.url} target="_blank" rel="noreferrer">{record.url}</a></td><td><div className="table-actions"><button type="button" className="edit-button" onClick={() => openEditModal(record)}>Edit</button><button type="button" className="delete-button" onClick={() => deleteSocialUrl(record.id)}>Delete</button></div></td></tr>)}</tbody></table></div>{isModalOpen && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) setIsModalOpen(false) }}><div className="information-modal" role="dialog" aria-modal="true"><div className="modal-heading"><div><p className="eyebrow">Online presence</p><h2>{editingId ? 'Edit social URL' : 'Add social URL'}</h2></div><button className="modal-close" type="button" onClick={() => !saving && setIsModalOpen(false)} aria-label="Close modal">×</button></div><form className="modal-form" onSubmit={saveSocialUrl}><label>Title<input name="title" value={form.title} onChange={updateField} required placeholder="e.g. Facebook" /></label><label>URL<input name="url" value={form.url} onChange={updateField} required type="url" placeholder="https://example.com/your-page" /></label>{error && <p className="error-message" role="alert">{error}</p>}<div className="modal-actions"><button className="cancel-button" type="button" onClick={() => setIsModalOpen(false)}>Cancel</button><button className="primary-button" type="submit" disabled={saving}>{saving ? 'Saving...' : editingId ? 'Update social URL' : 'Add social URL'}</button></div></form></div></div>}</section>
+}
   useEffect(() => {
     if (!isSupabaseConfigured) return
     async function loadCorporate() {
