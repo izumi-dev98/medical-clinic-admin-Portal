@@ -4,15 +4,26 @@ import './App.css'
 import Sidebar, { Icon } from './components/Sidebar'
 import SocialUrlsPage from './components/SocialUrls'
 import AppointmentsPage from './components/Appointments'
+import Login from './components/Login'
+import Users from './components/Users'
 import { getSupabaseImageUrl, isSupabaseConfigured, removeSupabaseImage, supabase, uploadCloudinaryImage } from './lib/supabaseClient'
 
 function App() {
+  const [user, setUser] = useState(undefined)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [activePage, setActivePage] = useState('Hospital/Clinic Information')
 
+  useEffect(() => {
+    fetch('/api/auth-session').then((response) => response.json()).then((result) => setUser(result.user)).catch(() => setUser(null))
+  }, [])
+
+  if (user === undefined) return <main className="login-page"><p className="muted">Loading...</p></main>
+  if (!user) return <Login onLogin={setUser} />
+  async function logout() { await fetch('/api/auth-session', { method: 'DELETE' }); setUser(null) }
+
   return (
     <div className="app-shell">
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} onNavigate={setActivePage} />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} onNavigate={setActivePage} onLogout={logout} user={user} />
       <main className="main-content">
         <header className="topbar">
           <button className="menu-button" type="button" onClick={() => setIsSidebarOpen(true)} aria-label="Open navigation menu">
@@ -22,7 +33,7 @@ function App() {
         </header>
 
         <div className="page-content">
-          {activePage === 'Hospital/Clinic Information' ? <ClinicInformation /> : activePage === 'Mission, Vision & Core' ? <MissionVisionCore /> : activePage === 'Awards' ? <Awards /> : activePage === 'Services' ? <Services /> : activePage === 'Doctors' ? <Doctors /> : activePage === 'Management Team' ? <ManagementTeam /> : activePage === 'Medical Packages' ? <MedicalPackages /> : activePage === 'Promotions' ? <Promotions /> : activePage === 'Blog' ? <Blog /> : activePage === 'Corporate' ? <ContentManager config={contentPageConfig.corporate} /> : activePage === 'Social URLs' ? <SocialUrlsPage /> : activePage === 'Appointments' ? <AppointmentsPage /> : <ClinicInformation />}
+          {activePage === 'Users' ? <Users currentUser={user} /> : activePage === 'Hospital/Clinic Information' ? <ClinicInformation /> : activePage === 'Mission, Vision & Core' ? <MissionVisionCore /> : activePage === 'Awards' ? <Awards /> : activePage === 'Services' ? <Services /> : activePage === 'Doctors' ? <Doctors /> : activePage === 'Management Team' ? <ManagementTeam /> : activePage === 'Medical Packages' ? <MedicalPackages /> : activePage === 'Promotions' ? <Promotions /> : activePage === 'Blog' ? <Blog /> : activePage === 'Corporate' ? <ContentManager config={contentPageConfig.corporate} /> : activePage === 'Social URLs' ? <SocialUrlsPage /> : activePage === 'Appointments' ? <AppointmentsPage /> : <ClinicInformation />}
         </div>
       </main>
     </div>

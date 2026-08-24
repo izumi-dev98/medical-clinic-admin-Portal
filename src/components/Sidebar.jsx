@@ -11,6 +11,7 @@ const navigation = [
   { label: 'Corporate', icon: 'corporate' },
   { label: 'Social URLs', icon: 'link' },
   { label: 'Appointments', icon: 'calendar' },
+  { label: 'Users', icon: 'users' },
 ]
 
 function Icon({ name, size = 20 }) {
@@ -38,7 +39,7 @@ function Icon({ name, size = 20 }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>
 }
 
-function Sidebar({ isOpen, onClose, onNavigate }) {
+function Sidebar({ isOpen, onClose, onNavigate, onLogout, user }) {
   return (
     <>
       <div className={`sidebar-backdrop ${isOpen ? 'visible' : ''}`} onClick={onClose} />
@@ -52,6 +53,7 @@ function Sidebar({ isOpen, onClose, onNavigate }) {
           <p className="nav-label">Workspace</p>
           {navigation.map((item) => <NavItem key={item.label} item={item} onClick={() => { onNavigate(item.label); onClose() }} />)}
         </nav>
+        <div className="sidebar-bottom"><div className="profile-mini"><div className="avatar">{user?.username?.slice(0, 2).toUpperCase()}</div><div><strong>{user?.fullName || user?.username}</strong><span>{user?.username}</span></div><button className="profile-more" type="button" onClick={onLogout} aria-label="Sign out">↪</button></div></div>
 
       </aside>
     </>
