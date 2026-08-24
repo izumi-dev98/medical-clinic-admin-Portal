@@ -8,6 +8,7 @@ const navigation = [
   { label: 'Medical Packages', icon: 'package' },
   { label: 'Promotions', icon: 'promotion' },
   { label: 'Blog', icon: 'blog' },
+  { label: 'Corporate', icon: 'corporate' },
 ]
 
 function Icon({ name, size = 20 }) {
@@ -25,6 +26,7 @@ function Icon({ name, size = 20 }) {
     package: <><path d="m3 7 9-4 9 4-9 4-9-4Z" /><path d="M3 7v10l9 4 9-4V7M12 11v10" /></>,
     promotion: <><path d="m20 12-8 8-8-8 8-8 8 8Z" /><circle cx="9.5" cy="9.5" r="1" /><path d="m10 14 4-4" /></>,
     blog: <><path d="M5 4h14a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2V4Z" /><path d="M5 18a2 2 0 0 0 2 2M9 8h8M9 12h8M9 16h5" /></>,
+    corporate: <><path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2" /></>,
     menu: <><path d="M4 7h16M4 12h16M4 17h16" /></>,
     bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></>,
     settings: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.42 1.42-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-2v-.48a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-1.42-1.42.06-.06A1.7 1.7 0 0 0 9.4 15a1.7 1.7 0 0 0-1.56-1.03H7v-2h.84A1.7 1.7 0 0 0 9.4 11a1.7 1.7 0 0 0-.34-1.88L9 9.06l1.42-1.42.06.06A1.7 1.7 0 0 0 12.36 8.7 1.7 1.7 0 0 0 13.4 7.14V7h2v.14a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06 1.42 1.42-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03H21v2h-.04A1.7 1.7 0 0 0 19.4 15Z" /></>,

@@ -20,7 +20,7 @@ function App() {
         </header>
 
         <div className="page-content">
-          {activePage === 'Hospital/Clinic Information' ? <ClinicInformation /> : activePage === 'Mission, Vision & Core' ? <MissionVisionCore /> : activePage === 'Awards' ? <Awards /> : activePage === 'Services' ? <Services /> : activePage === 'Doctors' ? <Doctors /> : activePage === 'Management Team' ? <ManagementTeam /> : activePage === 'Medical Packages' ? <MedicalPackages /> : activePage === 'Promotions' ? <Promotions /> : activePage === 'Blog' ? <Blog /> : <ClinicInformation />}
+          {activePage === 'Hospital/Clinic Information' ? <ClinicInformation /> : activePage === 'Mission, Vision & Core' ? <MissionVisionCore /> : activePage === 'Awards' ? <Awards /> : activePage === 'Services' ? <Services /> : activePage === 'Doctors' ? <Doctors /> : activePage === 'Management Team' ? <ManagementTeam /> : activePage === 'Medical Packages' ? <MedicalPackages /> : activePage === 'Promotions' ? <Promotions /> : activePage === 'Blog' ? <Blog /> : activePage === 'Corporate' ? <ContentManager config={contentPageConfig.corporate} /> : <ClinicInformation />}
         </div>
       </main>
     </div>
@@ -580,6 +580,11 @@ const contentPageConfig = {
     emptyForm: { title: '', description: '', discount_type: 'Percentage', discount_value: '', start_date: '', end_date: '', promo_code: '', image_url: '', is_active: true },
     fields: [['title', 'Title', 'Enter promotion title'], ['description', 'Description', 'Describe this promotion'], ['discount_value', 'Discount value', 'e.g. 20']],
   },
+  corporate: {
+    table: 'corporate', bucket: 'corporate-images', eyebrow: 'Clinic partnerships', heading: 'Corporate', addLabel: 'Add corporate', singular: 'corporate item', empty: 'No corporate information added yet.',
+    emptyForm: { title: '', description: '', image_url: '' },
+    fields: [['title', 'Title', 'Enter title'], ['description', 'Description', 'Describe this corporate information']],
+  },
 }
 
 function MedicalPackages() { return <ContentManager config={contentPageConfig.packages} /> }
@@ -645,7 +650,10 @@ function ContentManager({ config }) {
   }
 
   const isPackage = config.table === 'medical_packages'
-  return <section className="information-page"><div className="information-heading"><div><p className="eyebrow">{config.eyebrow}</p><h1>{config.heading}</h1><p className="muted">Manage {config.singular}s shown to your patients.</p></div><button className="primary-button" type="button" onClick={openAddModal} disabled={loading}><span>+</span> {config.addLabel}</button></div>{!isSupabaseConfigured && <p className="setup-message">Add your Supabase keys to `.env.local` to enable cloud saving.</p>}{error && <p className="error-message" role="alert">{error}</p>}<div className="information-table-wrap"><table className="information-table"><thead><tr><th>Image</th><th>Title</th>{isPackage ? <><th>Price</th><th>Duration</th></> : <><th>Discount</th><th>Promo period</th></>}<th>Status</th><th>Actions</th></tr></thead><tbody>{loading ? <tr><td colSpan="6" className="empty-state">Loading {config.singular}s...</td></tr> : records.length === 0 ? <tr><td colSpan="6" className="empty-state">{config.empty}</td></tr> : records.map((record) => <tr key={record.id}><td>{record.image_url ? <img className="table-content-image" src={record.image_url} alt="" /> : <span className="table-profile-placeholder">—</span>}</td><td><strong>{record.title}</strong><span className="table-subtext">{isPackage ? record.short_description : record.description}</span></td>{isPackage ? <><td>${Number(record.price).toFixed(2)}</td><td>{record.duration}</td></> : <><td>{record.discount_type === 'Percentage' ? `${record.discount_value}%` : `$${record.discount_value}`}</td><td>{record.start_date} - {record.end_date}</td></>}<td><span className={`status-badge ${record.is_active ? 'active' : 'inactive'}`}>{record.is_active ? 'Active' : 'Inactive'}</span></td><td><div className="table-actions"><button type="button" className="edit-button" onClick={() => openEditModal(record)}>Edit</button><button type="button" className="delete-button" onClick={() => deleteRecord(record.id)}>Delete</button></div></td></tr>)}</tbody></table></div>{isModalOpen && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) setIsModalOpen(false) }}><div className="information-modal" role="dialog" aria-modal="true"><div className="modal-heading"><div><p className="eyebrow">{config.eyebrow}</p><h2>{editingId ? `Edit ${config.singular}` : config.addLabel}</h2></div><button className="modal-close" type="button" onClick={() => !saving && setIsModalOpen(false)} aria-label="Close modal">×</button></div><form className="modal-form" onSubmit={saveRecord}>{config.fields.map(([name, label, placeholder]) => name === 'description' ? <label key={name}>{label}<textarea name={name} value={form[name]} onChange={updateField} required rows="4" placeholder={placeholder} /></label> : <label key={name}>{label}<input name={name} value={form[name]} onChange={updateField} required type={name.includes('date') ? 'date' : name === 'price' || name === 'discount_value' ? 'number' : 'text'} step={name === 'price' || name === 'discount_value' ? '0.01' : undefined} placeholder={placeholder} /></label>)}{!isPackage && <><div className="modal-form-grid"><label>Discount type<select name="discount_type" value={form.discount_type} onChange={updateField}><option>Percentage</option><option>Fixed amount</option></select></label><label>Promo code<input name="promo_code" value={form.promo_code} onChange={updateField} placeholder="e.g. HEALTH20" /></label></div><div className="modal-form-grid"><label>Start date<input name="start_date" value={form.start_date} onChange={updateField} required type="date" /></label><label>End date<input name="end_date" value={form.end_date} onChange={updateField} required type="date" /></label></div></>}{isPackage && <label>Included services<textarea name="included_services" value={form.included_services} onChange={updateField} required rows="3" placeholder="e.g. Blood test, ECG, consultation" /></label>}<label>Image<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setImageFile(event.target.files?.[0] ?? null)} />{imageFile && <span className="file-count">{imageFile.name}</span>}</label><label className="checkbox-label"><input name="is_active" type="checkbox" checked={form.is_active} onChange={updateField} /> Active</label>{error && <p className="error-message" role="alert">{error}</p>}<div className="modal-actions"><button className="cancel-button" type="button" onClick={() => setIsModalOpen(false)}>Cancel</button><button className="primary-button" type="submit" disabled={saving}>{saving ? 'Saving...' : editingId ? `Update ${config.singular}` : config.addLabel}</button></div></form></div></div>}</section>
+  const isCorporate = config.table === 'corporate'
+  const detailHeaders = isCorporate ? <th>Description</th> : isPackage ? <><th>Price</th><th>Duration</th></> : <><th>Discount</th><th>Promo period</th></>
+  const statusHeader = !isCorporate && <th>Status</th>
+  return <section className="information-page"><div className="information-heading"><div><p className="eyebrow">{config.eyebrow}</p><h1>{config.heading}</h1><p className="muted">Manage {config.singular}s shown to your patients.</p></div><button className="primary-button" type="button" onClick={openAddModal} disabled={loading}><span>+</span> {config.addLabel}</button></div>{!isSupabaseConfigured && <p className="setup-message">Add your Supabase keys to `.env.local` to enable cloud saving.</p>}{error && <p className="error-message" role="alert">{error}</p>}<div className="information-table-wrap"><table className="information-table"><thead><tr><th>Image</th><th>Title</th>{detailHeaders}{statusHeader}<th>Actions</th></tr></thead><tbody>{loading ? <tr><td colSpan={isCorporate ? 4 : 6} className="empty-state">Loading {config.singular}s...</td></tr> : records.length === 0 ? <tr><td colSpan={isCorporate ? 4 : 6} className="empty-state">{config.empty}</td></tr> : records.map((record) => <tr key={record.id}><td>{record.image_url ? <img className="table-content-image" src={record.image_url} alt="" /> : <span className="table-profile-placeholder">—</span>}</td><td><strong>{record.title}</strong>{!isCorporate && <span className="table-subtext">{isPackage ? record.short_description : record.description}</span>}</td>{isCorporate ? <td className="about-cell">{record.description}</td> : isPackage ? <><td>${Number(record.price).toFixed(2)}</td><td>{record.duration}</td></> : <><td>{record.discount_type === 'Percentage' ? `${record.discount_value}%` : `$${record.discount_value}`}</td><td>{record.start_date} - {record.end_date}</td><td><span className={`status-badge ${record.is_active ? 'active' : 'inactive'}`}>{record.is_active ? 'Active' : 'Inactive'}</span></td></>}<td><div className="table-actions"><button type="button" className="edit-button" onClick={() => openEditModal(record)}>Edit</button><button type="button" className="delete-button" onClick={() => deleteRecord(record.id)}>Delete</button></div></td></tr>)}</tbody></table></div>{isModalOpen && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) setIsModalOpen(false) }}><div className="information-modal" role="dialog" aria-modal="true"><div className="modal-heading"><div><p className="eyebrow">{config.eyebrow}</p><h2>{editingId ? `Edit ${config.singular}` : config.addLabel}</h2></div><button className="modal-close" type="button" onClick={() => !saving && setIsModalOpen(false)} aria-label="Close modal">×</button></div><form className="modal-form" onSubmit={saveRecord}>{config.fields.map(([name, label, placeholder]) => name === 'description' ? <label key={name}>{label}<textarea name={name} value={form[name]} onChange={updateField} required rows="4" placeholder={placeholder} /></label> : <label key={name}>{label}<input name={name} value={form[name]} onChange={updateField} required type={name.includes('date') ? 'date' : name === 'price' || name === 'discount_value' ? 'number' : 'text'} step={name === 'price' || name === 'discount_value' ? '0.01' : undefined} placeholder={placeholder} /></label>)}{!isPackage && !isCorporate && <><div className="modal-form-grid"><label>Discount type<select name="discount_type" value={form.discount_type} onChange={updateField}><option>Percentage</option><option>Fixed amount</option></select></label><label>Promo code<input name="promo_code" value={form.promo_code} onChange={updateField} placeholder="e.g. HEALTH20" /></label></div><div className="modal-form-grid"><label>Start date<input name="start_date" value={form.start_date} onChange={updateField} required type="date" /></label><label>End date<input name="end_date" value={form.end_date} onChange={updateField} required type="date" /></label></div></>}{isPackage && <label>Included services<textarea name="included_services" value={form.included_services} onChange={updateField} required rows="3" placeholder="e.g. Blood test, ECG, consultation" /></label>}<label>Image<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setImageFile(event.target.files?.[0] ?? null)} />{imageFile && <span className="file-count">{imageFile.name}</span>}</label>{!isCorporate && <label className="checkbox-label"><input name="is_active" type="checkbox" checked={form.is_active} onChange={updateField} /> Active</label>}{error && <p className="error-message" role="alert">{error}</p>}<div className="modal-actions"><button className="cancel-button" type="button" onClick={() => setIsModalOpen(false)}>Cancel</button><button className="primary-button" type="submit" disabled={saving}>{saving ? 'Saving...' : editingId ? `Update ${config.singular}` : config.addLabel}</button></div></form></div></div>}</section>
 }
 
 function Blog() {
@@ -658,7 +666,67 @@ function Blog() {
   const [loading, setLoading] = useState(isSupabaseConfigured)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  void Corporate
 
+
+function Corporate() {
+  const emptyForm = { title: '', description: '', image_url: '' }
+  const [records, setRecords] = useState([])
+  const [form, setForm] = useState(emptyForm)
+  const [editingId, setEditingId] = useState(null)
+  const [imageFile, setImageFile] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [loading, setLoading] = useState(isSupabaseConfigured)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return
+    async function loadCorporate() {
+      const { data, error: fetchError } = await supabase.from('corporate').select('*').order('created_at', { ascending: false })
+      if (fetchError) setError(fetchError.message)
+      else setRecords(data ?? [])
+      setLoading(false)
+    }
+    loadCorporate()
+  }, [])
+
+  function updateField(event) {
+    setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
+    setError('')
+  }
+  function openAddModal() { setForm(emptyForm); setEditingId(null); setImageFile(null); setError(''); setIsModalOpen(true) }
+  function openEditModal(record) { setForm({ title: record.title ?? '', description: record.description ?? '', image_url: record.image_url ?? '' }); setEditingId(record.id); setImageFile(null); setError(''); setIsModalOpen(true) }
+
+  async function saveCorporate(event) {
+    event.preventDefault()
+    setError('')
+    if (!isSupabaseConfigured) { setError('Supabase is not configured. Add your environment variables first.'); return }
+    setSaving(true)
+    let imageUrl = form.image_url
+    if (imageFile) {
+      const filePath = `${editingId ?? crypto.randomUUID()}-${crypto.randomUUID()}-${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`
+      const { error: uploadError } = await supabase.storage.from('corporate-images').upload(filePath, imageFile)
+      if (uploadError) { setError(uploadError.message); setSaving(false); return }
+      imageUrl = supabase.storage.from('corporate-images').getPublicUrl(filePath).data.publicUrl
+    }
+    const payload = editingId ? { id: editingId, title: form.title, description: form.description, image_url: imageUrl } : { title: form.title, description: form.description, image_url: imageUrl }
+    const { data, error: saveError } = await supabase.from('corporate').upsert(payload).select().single()
+    if (saveError) setError(saveError.message)
+    else { setRecords((current) => editingId ? current.map((item) => item.id === editingId ? data : item) : [data, ...current]); setIsModalOpen(false); await Swal.fire({ icon: 'success', title: editingId ? 'Corporate information updated' : 'Corporate information added', timer: 1400, showConfirmButton: false }) }
+    setSaving(false)
+  }
+
+  async function deleteCorporate(id) {
+    const result = await Swal.fire({ icon: 'warning', title: 'Delete this corporate item?', text: 'This item will be permanently removed.', showCancelButton: true, confirmButtonText: 'Delete', confirmButtonColor: '#d46d59' })
+    if (!result.isConfirmed) return
+    const { error: deleteError } = await supabase.from('corporate').delete().eq('id', id)
+    if (deleteError) setError(deleteError.message)
+    else { setRecords((current) => current.filter((item) => item.id !== id)); await Swal.fire({ icon: 'success', title: 'Deleted', timer: 1200, showConfirmButton: false }) }
+  }
+
+  return <section className="information-page"><div className="information-heading"><div><p className="eyebrow">Clinic partnerships</p><h1>Corporate</h1><p className="muted">Manage corporate information and partnerships shown to your visitors.</p></div><button className="primary-button" type="button" onClick={openAddModal} disabled={loading}><span>+</span> Add corporate</button></div>{!isSupabaseConfigured && <p className="setup-message">Add your Supabase keys to `.env.local` to enable cloud saving.</p>}{error && <p className="error-message" role="alert">{error}</p>}<div className="information-table-wrap"><table className="information-table"><thead><tr><th>Image</th><th>Title</th><th>Description</th><th>Actions</th></tr></thead><tbody>{loading ? <tr><td colSpan="4" className="empty-state">Loading corporate information...</td></tr> : records.length === 0 ? <tr><td colSpan="4" className="empty-state">No corporate information added yet.</td></tr> : records.map((record) => <tr key={record.id}><td>{record.image_url ? <img className="table-content-image" src={record.image_url} alt="" /> : <span className="table-profile-placeholder">—</span>}</td><td><strong>{record.title}</strong></td><td className="about-cell">{record.description}</td><td><div className="table-actions"><button type="button" className="edit-button" onClick={() => openEditModal(record)}>Edit</button><button type="button" className="delete-button" onClick={() => deleteCorporate(record.id)}>Delete</button></div></td></tr>)}</tbody></table></div>{isModalOpen && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) setIsModalOpen(false) }}><div className="information-modal" role="dialog" aria-modal="true"><div className="modal-heading"><div><p className="eyebrow">Clinic partnerships</p><h2>{editingId ? 'Edit corporate information' : 'Add corporate information'}</h2></div><button className="modal-close" type="button" onClick={() => !saving && setIsModalOpen(false)} aria-label="Close modal">×</button></div><form className="modal-form" onSubmit={saveCorporate}><label>Title<input name="title" value={form.title} onChange={updateField} required placeholder="Enter title" /></label><label>Description<textarea name="description" value={form.description} onChange={updateField} required rows="6" placeholder="Describe this corporate information" /></label><label>Image<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setImageFile(event.target.files?.[0] ?? null)} />{imageFile && <span className="file-count">{imageFile.name}</span>}</label>{error && <p className="error-message" role="alert">{error}</p>}<div className="modal-actions"><button className="cancel-button" type="button" onClick={() => setIsModalOpen(false)}>Cancel</button><button className="primary-button" type="submit" disabled={saving}>{saving ? 'Saving...' : editingId ? 'Update information' : 'Add information'}</button></div></form></div></div>}</section>
+}
   useEffect(() => {
     if (!isSupabaseConfigured) return
     async function loadPosts() {

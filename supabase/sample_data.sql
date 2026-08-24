@@ -46,6 +46,13 @@ select * from (values
 ) as sample(name, position, department, description, image_url)
 where not exists (select 1 from public.management_team);
 
+insert into public.corporate (title, description, image_url)
+select * from (values
+  ('Corporate Wellness Partnerships', 'Flexible healthcare programs that help local businesses support healthier teams.', null),
+  ('Employee Health Screening', 'Convenient workplace screening packages designed around the needs of growing organizations.', null)
+) as sample(title, description, image_url)
+where not exists (select 1 from public.corporate existing where existing.title = sample.title);
+
 insert into public.medical_packages (title, short_description, description, price, duration, included_services, image_url, is_active)
 select * from (values
   ('Complete Health Checkup', 'A complete picture of your current health.', 'A comprehensive screening package designed to identify health risks early and give you a clear care plan.', 199.00, '2 hours', 'Blood test, ECG, chest X-ray, doctor consultation', null, true),
