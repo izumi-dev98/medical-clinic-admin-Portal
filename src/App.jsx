@@ -14,6 +14,37 @@ function App() {
   const [activePage, setActivePage] = useState('Hospital/Clinic Information')
 
   useEffect(() => {
+    const previews = new Map()
+    function showPreview(event) {
+      const input = event.target
+      if (!(input instanceof HTMLInputElement) || input.type !== 'file') return
+      const parent = input.closest('label')
+      if (!parent) return
+      previews.get(input)?.forEach((item) => URL.revokeObjectURL(item.url))
+      parent.querySelector('.image-upload-preview')?.remove()
+      const files = Array.from(input.files ?? [])
+      if (!files.length) return
+      const preview = document.createElement('div')
+      preview.className = 'image-upload-preview'
+      const items = files.map((file) => {
+        const url = URL.createObjectURL(file)
+        const image = document.createElement('img')
+        image.src = url
+        image.alt = 'Selected preview'
+        preview.append(image)
+        return { url }
+      })
+      input.before(preview)
+      previews.set(input, items)
+    }
+    document.addEventListener('change', showPreview)
+    return () => {
+      document.removeEventListener('change', showPreview)
+      previews.forEach((items) => items.forEach((item) => URL.revokeObjectURL(item.url)))
+    }
+  }, [])
+
+  useEffect(() => {
     fetch('/api/auth-session').then((response) => response.json()).then((result) => setUser(result.user)).catch(() => setUser(null))
   }, [])
 
