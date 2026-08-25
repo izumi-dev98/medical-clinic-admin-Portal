@@ -160,7 +160,7 @@ function ClinicInformation() {
     const previousImageUrl = form.profile_image_url
     let profileImageUrl = form.profile_image_url
     if (imageFile) {
-      const { data: uploadData, error: uploadError } = await uploadCloudinaryImage(imageFile, 'clinic-images')
+      const { data: uploadData, error: uploadError } = await uploadCloudinaryImage(imageFile, 'clinic-images', { crop: false })
       if (uploadError) {
         setError(uploadError.message)
         setSaving(false)
@@ -344,7 +344,7 @@ function Awards() {
     if (imageFiles.length) {
       const uploadedUrls = []
       for (const imageFile of imageFiles) {
-        const { data: uploadData, error: uploadError } = await uploadCloudinaryImage(imageFile, 'award-images')
+        const { data: uploadData, error: uploadError } = await uploadCloudinaryImage(imageFile, 'award-images', { crop: false })
         if (uploadError) {
           setError(uploadError.message)
           setSaving(false)

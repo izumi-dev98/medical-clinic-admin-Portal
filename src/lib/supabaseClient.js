@@ -18,9 +18,22 @@ export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null
 
-async function prepareCloudinaryFile(file) {
+async function prepareCloudinaryFile(file, shouldCrop = true) {
   const image = await createImageBitmap(file)
   const maxDimension = 1600
+  if (!shouldCrop) {
+    const scale = Math.min(1, maxDimension / Math.max(image.width, image.height))
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.max(1, Math.round(image.width * scale))
+    canvas.height = Math.max(1, Math.round(image.height * scale))
+    canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height)
+    image.close()
+
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', 0.82))
+    if (!blob) throw new Error('Could not prepare image for upload.')
+    return new File([blob], `${file.name.replace(/\.[^/.]+$/, '')}.webp`, { type: 'image/webp' })
+  }
+
   const position = imageCropPositions.get(file) || imageCropPositions.get(imageFileKey(file)) || { x: 50, y: 50 }
   const targetAspect = 16 / 9
   const sourceAspect = image.width / image.height
@@ -48,9 +61,13 @@ export function setImageCropPosition(file, x, y) {
   }
 }
 
-export async function uploadCloudinaryImage(file, folder) {
+export function clearImageCropPosition(file) {
+  if (file) imageCropPositions.delete(imageFileKey(file))
+}
+
+export async function uploadCloudinaryImage(file, folder, options = {}) {
   try {
-    const uploadFile = await prepareCloudinaryFile(file)
+    const uploadFile = await prepareCloudinaryFile(file, options.crop !== false)
     const formData = new FormData()
     formData.append('file', uploadFile)
     formData.append('folder', folder)
