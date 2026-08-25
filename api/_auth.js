@@ -16,11 +16,13 @@ function sign(value) {
 
 export function setSession(response, user) {
   const payload = Buffer.from(JSON.stringify({ id: user.id, username: user.username, exp: Date.now() + 8 * 60 * 60 * 1000 })).toString('base64url')
-  response.setHeader('Set-Cookie', `${cookieName}=${payload}.${sign(payload)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=28800`)
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : ''
+  response.setHeader('Set-Cookie', `${cookieName}=${payload}.${sign(payload)}; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=28800`)
 }
 
 export function clearSession(response) {
-  response.setHeader('Set-Cookie', `${cookieName}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`)
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : ''
+  response.setHeader('Set-Cookie', `${cookieName}=; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=0`)
 }
 
 export function currentUser(request) {

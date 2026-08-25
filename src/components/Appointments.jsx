@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import Swal from 'sweetalert2'
-import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
+import { isSupabaseConfigured } from '../lib/supabaseClient'
 
 const emptyForm = { patient_name: '', age: '', address: '', phone_number: '', doctor_name: '', appointment_date: '', reason: '', status: 'Pending' }
 
@@ -16,9 +16,10 @@ function Appointments() {
   useEffect(() => {
     if (!isSupabaseConfigured) return
     async function loadAppointments() {
-      const { data, error: fetchError } = await supabase.from('appointments').select('*').order('created_at', { ascending: false })
-      if (fetchError) setError(fetchError.message)
-      else setRecords(data ?? [])
+      const response = await fetch('/api/appointments')
+      const result = await response.json()
+      if (!response.ok) setError(result.error || 'Could not load appointments.')
+      else setRecords(result.appointments ?? [])
       setLoading(false)
     }
     loadAppointments()
@@ -48,11 +49,14 @@ function Appointments() {
     setError('')
     if (!isSupabaseConfigured) { setError('Supabase is not configured. Add your environment variables first.'); return }
     setSaving(true)
-    const payload = { ...form, age: Number(form.age) }
-    if (editingId) payload.id = editingId
-    const { data, error: saveError } = await supabase.from('appointments').upsert(payload).select().single()
-    if (saveError) setError(saveError.message)
+    const payload = new FormData()
+    Object.entries(form).forEach(([key, value]) => payload.append(key, value))
+    if (editingId) payload.append('id', editingId)
+    const response = await fetch('/api/appointments', { method: editingId ? 'PATCH' : 'POST', body: payload })
+    const result = await response.json()
+    if (!response.ok) setError(result.error || 'Could not save appointment.')
     else {
+      const data = result.appointment
       setRecords((current) => editingId ? current.map((item) => item.id === editingId ? data : item) : [data, ...current])
       setIsModalOpen(false)
       await Swal.fire({ icon: 'success', title: editingId ? 'Appointment updated' : 'Appointment added', timer: 1400, showConfirmButton: false })
@@ -62,9 +66,14 @@ function Appointments() {
 
   async function updateAppointmentStatus(id, status) {
     setError('')
-    const { data, error: updateError } = await supabase.from('appointments').update({ status }).eq('id', id).select().single()
-    if (updateError) setError(updateError.message)
+    const payload = new FormData()
+    payload.append('id', id)
+    payload.append('status', status)
+    const response = await fetch('/api/appointments', { method: 'PATCH', body: payload })
+    const result = await response.json()
+    if (!response.ok) setError(result.error || 'Could not update appointment.')
     else {
+      const data = result.appointment
       setRecords((current) => current.map((item) => item.id === id ? data : item))
       await Swal.fire({ icon: 'success', title: `Appointment ${status.toLowerCase()}`, timer: 1200, showConfirmButton: false })
     }
