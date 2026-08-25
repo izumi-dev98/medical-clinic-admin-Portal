@@ -3,6 +3,7 @@
 .app-shell { min-height: 100vh; background: #f7f8fa; }
 .sidebar { width: 252px; background: #fff; border-right: 1px solid #e9ebef; padding: 27px 16px 20px; display: flex; flex-direction: column; position: fixed; inset: 0 auto 0 0; z-index: 20; box-sizing: border-box; }
 .brand { display: flex; align-items: center; gap: 10px; padding: 0 14px 41px; font: 800 22px Manrope, sans-serif; letter-spacing: -.8px; color: #17202b; }
+.brand-logo { display: block; width: 27px; height: 27px; border-radius: 50%; object-fit: cover; }
 .brand-mark { display: grid; place-items: center; width: 27px; height: 27px; color: #fff; background: #236b5d; border-radius: 50%; font: 500 21px 'DM Sans', sans-serif; }
 .nav-label { color: #a4aab3; font-size: 11px; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase; padding: 0 14px; margin: 0 0 10px; }
 .management-label { margin-top: 31px; }.sidebar-nav { flex: 1; }

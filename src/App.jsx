@@ -10,6 +10,7 @@ import { getSupabaseImageUrl, isSupabaseConfigured, removeSupabaseImage, setImag
 
 function App() {
   const [user, setUser] = useState(undefined)
+  const [clinicLogoUrl, setClinicLogoUrl] = useState('')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [activePage, setActivePage] = useState('Hospital/Clinic Information')
 
@@ -77,13 +78,18 @@ function App() {
     fetch('/api/auth-session').then((response) => response.json()).then((result) => setUser(result.user)).catch(() => setUser(null))
   }, [])
 
+  useEffect(() => {
+    if (!isSupabaseConfigured) return
+    supabase.from('clinic_information').select('profile_image_url').order('created_at', { ascending: false }).limit(1).maybeSingle().then(({ data }) => setClinicLogoUrl(data?.profile_image_url ?? ''))
+  }, [])
+
   if (user === undefined) return <main className="login-page"><p className="muted">Loading...</p></main>
-  if (!user) return <Login onLogin={setUser} />
+  if (!user) return <Login onLogin={setUser} logoUrl={clinicLogoUrl} />
   async function logout() { await fetch('/api/auth-session', { method: 'DELETE' }); setUser(null) }
 
   return (
     <div className="app-shell">
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} onNavigate={setActivePage} onLogout={logout} user={user} />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} onNavigate={setActivePage} onLogout={logout} user={user} logoUrl={clinicLogoUrl} />
       <main className="main-content">
         <header className="topbar">
           <button className="menu-button" type="button" onClick={() => setIsSidebarOpen(true)} aria-label="Open navigation menu">
@@ -93,14 +99,14 @@ function App() {
         </header>
 
         <div className="page-content">
-          {activePage === 'Users' ? <Users currentUser={user} /> : activePage === 'Hospital/Clinic Information' ? <ClinicInformation /> : activePage === 'Mission, Vision & Core' ? <MissionVisionCore /> : activePage === 'Awards' ? <Awards /> : activePage === 'Services' ? <Services /> : activePage === 'Doctors' ? <Doctors /> : activePage === 'Management Team' ? <ManagementTeam /> : activePage === 'Medical Packages' ? <MedicalPackages /> : activePage === 'Promotions' ? <Promotions /> : activePage === 'Blog' ? <Blog /> : activePage === 'Corporate' ? <ContentManager config={contentPageConfig.corporate} /> : activePage === 'Social URLs' ? <SocialUrlsPage /> : activePage === 'Appointments' ? <AppointmentsPage /> : <ClinicInformation />}
+          {activePage === 'Users' ? <Users currentUser={user} /> : activePage === 'Hospital/Clinic Information' ? <ClinicInformation onProfileImageChange={setClinicLogoUrl} /> : activePage === 'Mission, Vision & Core' ? <MissionVisionCore /> : activePage === 'Awards' ? <Awards /> : activePage === 'Services' ? <Services /> : activePage === 'Doctors' ? <Doctors /> : activePage === 'Management Team' ? <ManagementTeam /> : activePage === 'Medical Packages' ? <MedicalPackages /> : activePage === 'Promotions' ? <Promotions /> : activePage === 'Blog' ? <Blog /> : activePage === 'Corporate' ? <ContentManager config={contentPageConfig.corporate} /> : activePage === 'Social URLs' ? <SocialUrlsPage /> : activePage === 'Appointments' ? <AppointmentsPage /> : <ClinicInformation onProfileImageChange={setClinicLogoUrl} />}
         </div>
       </main>
     </div>
   )
 }
 
-function ClinicInformation() {
+function ClinicInformation({ onProfileImageChange }) {
   const emptyForm = { clinic_title: '', about_us: '', address: '', emergency_phone: '', phone: '', email: '', profile_image_url: '' }
   const [records, setRecords] = useState([])
   const [form, setForm] = useState(emptyForm)
@@ -173,6 +179,7 @@ function ClinicInformation() {
     if (saveError) setError(saveError.message)
     else {
       if (imageFile && previousImageUrl && previousImageUrl !== profileImageUrl) await removeSupabaseImage('clinic-images', previousImageUrl)
+      onProfileImageChange(profileImageUrl)
       setRecords((current) => editingId ? current.map((item) => item.id === editingId ? data : item) : [data, ...current])
       setIsModalOpen(false)
       await Swal.fire({ icon: 'success', title: editingId ? 'Information updated' : 'Information added', text: 'Clinic information was saved successfully.', timer: 1600, showConfirmButton: false })
@@ -187,6 +194,7 @@ function ClinicInformation() {
     if (deleteError) setError(deleteError.message)
     else {
       setRecords((current) => current.filter((item) => item.id !== id))
+      onProfileImageChange('')
       await Swal.fire({ icon: 'success', title: 'Deleted', text: 'Clinic information was deleted.', timer: 1400, showConfirmButton: false })
     }
   }

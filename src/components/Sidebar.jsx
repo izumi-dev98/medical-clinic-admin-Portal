@@ -39,13 +39,13 @@ function Icon({ name, size = 20 }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>
 }
 
-function Sidebar({ isOpen, onClose, onNavigate, onLogout, user }) {
+function Sidebar({ isOpen, onClose, onNavigate, onLogout, user, logoUrl }) {
   return (
     <>
       <div className={`sidebar-backdrop ${isOpen ? 'visible' : ''}`} onClick={onClose} />
       <aside className={`sidebar ${isOpen ? 'open' : ''}`} aria-label="Main navigation">
         <div className="brand">
-          <span className="brand-mark">+</span>
+          {logoUrl ? <img className="brand-logo" src={logoUrl} alt="Clinic logo" /> : <span className="brand-mark">+</span>}
           <span>NOSH</span>
         </div>
 
