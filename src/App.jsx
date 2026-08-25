@@ -6,7 +6,7 @@ import SocialUrlsPage from './components/SocialUrls'
 import AppointmentsPage from './components/Appointments'
 import Login from './components/Login'
 import Users from './components/Users'
-import { getSupabaseImageUrl, isSupabaseConfigured, removeSupabaseImage, supabase, uploadCloudinaryImage } from './lib/supabaseClient'
+import { getSupabaseImageUrl, isSupabaseConfigured, removeSupabaseImage, setImageCropPosition, supabase, uploadCloudinaryImage } from './lib/supabaseClient'
 
 function App() {
   const [user, setUser] = useState(undefined)
@@ -15,6 +15,7 @@ function App() {
 
   useEffect(() => {
     const previews = new Map()
+    const previewFiles = new WeakMap()
     let dragState = null
     function showPreview(event) {
       const input = event.target
@@ -33,8 +34,9 @@ function App() {
         image.src = url
         image.alt = 'Selected preview'
         image.draggable = false
+        previewFiles.set(image, file)
         preview.append(image)
-        return { url }
+        return { file, url }
       })
       input.before(preview)
       previews.set(input, items)
@@ -44,17 +46,18 @@ function App() {
       if (!(image instanceof HTMLImageElement) || !image.closest('.image-upload-preview')) return
       event.preventDefault()
       image.setPointerCapture(event.pointerId)
-      dragState = { image, startX: event.clientX, startY: event.clientY, x: Number(image.dataset.positionX || 50), y: Number(image.dataset.positionY || 50) }
+      dragState = { image, file: previewFiles.get(image), startX: event.clientX, startY: event.clientY, x: Number(image.dataset.positionX || 50), y: Number(image.dataset.positionY || 50) }
     }
     function moveDrag(event) {
       if (!dragState) return
-      const { image, startX, startY, x, y } = dragState
+      const { image, file, startX, startY, x, y } = dragState
       const parent = image.parentElement
       const nextX = Math.max(0, Math.min(100, x - ((event.clientX - startX) / parent.clientWidth) * 100))
       const nextY = Math.max(0, Math.min(100, y - ((event.clientY - startY) / parent.clientHeight) * 100))
       image.dataset.positionX = nextX
       image.dataset.positionY = nextY
       image.style.objectPosition = `${nextX}% ${nextY}%`
+      setImageCropPosition(file, nextX, nextY)
     }
     function endDrag() { dragState = null }
     document.addEventListener('change', showPreview)

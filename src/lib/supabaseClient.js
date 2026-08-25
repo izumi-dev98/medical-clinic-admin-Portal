@@ -6,6 +6,8 @@ const supabaseUrl = useSupabaseProxy && typeof window !== 'undefined'
   ? `${window.location.origin}/supabase`
   : import.meta.env.VITE_SUPABASE_URL
 
+const imageCropPositions = new WeakMap()
+
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
 
 export const supabase = isSupabaseConfigured
@@ -15,16 +17,27 @@ export const supabase = isSupabaseConfigured
 async function prepareCloudinaryFile(file) {
   const image = await createImageBitmap(file)
   const maxDimension = 1600
-  const scale = Math.min(1, maxDimension / Math.max(image.width, image.height))
+  const position = imageCropPositions.get(file) || { x: 50, y: 50 }
+  const targetAspect = 16 / 9
+  const sourceAspect = image.width / image.height
+  const cropWidth = sourceAspect > targetAspect ? Math.round(image.height * targetAspect) : image.width
+  const cropHeight = sourceAspect > targetAspect ? image.height : Math.round(image.width / targetAspect)
+  const sourceX = Math.round((image.width - cropWidth) * position.x / 100)
+  const sourceY = Math.round((image.height - cropHeight) * position.y / 100)
+  const scale = Math.min(1, maxDimension / Math.max(cropWidth, cropHeight))
   const canvas = document.createElement('canvas')
-  canvas.width = Math.max(1, Math.round(image.width * scale))
-  canvas.height = Math.max(1, Math.round(image.height * scale))
-  canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height)
+  canvas.width = Math.max(1, Math.round(cropWidth * scale))
+  canvas.height = Math.max(1, Math.round(cropHeight * scale))
+  canvas.getContext('2d').drawImage(image, sourceX, sourceY, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height)
   image.close()
 
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', 0.82))
   if (!blob) throw new Error('Could not prepare image for upload.')
   return new File([blob], `${file.name.replace(/\.[^/.]+$/, '')}.webp`, { type: 'image/webp' })
+}
+
+export function setImageCropPosition(file, x, y) {
+  if (file) imageCropPositions.set(file, { x, y })
 }
 
 export async function uploadCloudinaryImage(file, folder) {
