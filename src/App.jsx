@@ -15,6 +15,7 @@ function App() {
 
   useEffect(() => {
     const previews = new Map()
+    let dragState = null
     function showPreview(event) {
       const input = event.target
       if (!(input instanceof HTMLInputElement) || input.type !== 'file') return
@@ -31,15 +32,40 @@ function App() {
         const image = document.createElement('img')
         image.src = url
         image.alt = 'Selected preview'
+        image.draggable = false
         preview.append(image)
         return { url }
       })
       input.before(preview)
       previews.set(input, items)
     }
+    function startDrag(event) {
+      const image = event.target
+      if (!(image instanceof HTMLImageElement) || !image.closest('.image-upload-preview')) return
+      event.preventDefault()
+      image.setPointerCapture(event.pointerId)
+      dragState = { image, startX: event.clientX, startY: event.clientY, x: Number(image.dataset.positionX || 50), y: Number(image.dataset.positionY || 50) }
+    }
+    function moveDrag(event) {
+      if (!dragState) return
+      const { image, startX, startY, x, y } = dragState
+      const parent = image.parentElement
+      const nextX = Math.max(0, Math.min(100, x - ((event.clientX - startX) / parent.clientWidth) * 100))
+      const nextY = Math.max(0, Math.min(100, y - ((event.clientY - startY) / parent.clientHeight) * 100))
+      image.dataset.positionX = nextX
+      image.dataset.positionY = nextY
+      image.style.objectPosition = `${nextX}% ${nextY}%`
+    }
+    function endDrag() { dragState = null }
     document.addEventListener('change', showPreview)
+    document.addEventListener('pointerdown', startDrag)
+    document.addEventListener('pointermove', moveDrag)
+    document.addEventListener('pointerup', endDrag)
     return () => {
       document.removeEventListener('change', showPreview)
+      document.removeEventListener('pointerdown', startDrag)
+      document.removeEventListener('pointermove', moveDrag)
+      document.removeEventListener('pointerup', endDrag)
       previews.forEach((items) => items.forEach((item) => URL.revokeObjectURL(item.url)))
     }
   }, [])
