@@ -8,11 +8,17 @@ import Login from './components/Login'
 import Users from './components/Users'
 import { getSupabaseImageUrl, isSupabaseConfigured, removeSupabaseImage, setImageCropPosition, supabase, uploadCloudinaryImage } from './lib/supabaseClient'
 
+const defaultPage = 'Hospital/Clinic Information'
+
 function App() {
   const [user, setUser] = useState(undefined)
   const [clinicLogoUrl, setClinicLogoUrl] = useState('')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [activePage, setActivePage] = useState('Hospital/Clinic Information')
+  const [activePage, setActivePage] = useState(() => localStorage.getItem('admin-active-page') || defaultPage)
+
+  useEffect(() => {
+    localStorage.setItem('admin-active-page', activePage)
+  }, [activePage])
 
   useEffect(() => {
     const previews = new Map()
