@@ -6,7 +6,11 @@ const supabaseUrl = useSupabaseProxy && typeof window !== 'undefined'
   ? `${window.location.origin}/supabase`
   : import.meta.env.VITE_SUPABASE_URL
 
-const imageCropPositions = new WeakMap()
+const imageCropPositions = new Map()
+
+function imageFileKey(file) {
+  return `${file.name}-${file.lastModified}-${file.size}-${file.type}`
+}
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
 
@@ -17,7 +21,7 @@ export const supabase = isSupabaseConfigured
 async function prepareCloudinaryFile(file) {
   const image = await createImageBitmap(file)
   const maxDimension = 1600
-  const position = imageCropPositions.get(file) || { x: 50, y: 50 }
+  const position = imageCropPositions.get(file) || imageCropPositions.get(imageFileKey(file)) || { x: 50, y: 50 }
   const targetAspect = 16 / 9
   const sourceAspect = image.width / image.height
   const cropWidth = sourceAspect > targetAspect ? Math.round(image.height * targetAspect) : image.width
@@ -37,7 +41,11 @@ async function prepareCloudinaryFile(file) {
 }
 
 export function setImageCropPosition(file, x, y) {
-  if (file) imageCropPositions.set(file, { x, y })
+  if (file) {
+    const position = { x, y }
+    imageCropPositions.set(file, position)
+    imageCropPositions.set(imageFileKey(file), position)
+  }
 }
 
 export async function uploadCloudinaryImage(file, folder) {
